@@ -12,8 +12,55 @@ import copy
 import sys
 import os
 
+import smtplib
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.header import Header
+
 TIMEOUT = 20
 TIMESLP = 3
+
+my_sender = '1692484707@qq.com'  # 发件人邮箱账号
+my_pass = 'fujkixpkjiyhcaji'  # 发件人邮箱密码
+my_user = 'anton1554970211@126.com'  # 收件人邮箱账号
+
+def mail():
+    ret = True
+    try:
+        cur_time = time.strftime("%d/%m/%Y")
+        msgRoot = MIMEMultipart('related')
+        msgRoot['From'] = Header('PKU-AutoSubmit', 'utf-8')
+        msgRoot['To'] = Header('student', 'utf-8')
+        subject = cur_time + ' 报备成功!'
+        msgRoot['Subject'] = Header(subject, 'utf-8')
+
+        msgAlternative = MIMEMultipart('alternative')
+        msgRoot.attach(msgAlternative)
+
+        mail_msg = """
+        <p>自动报备成功！</p>
+        <p>截图：</p>
+        <p><img src="cid:image1"></p>
+        """
+        msgAlternative.attach(MIMEText(mail_msg, 'html', 'utf-8'))
+
+        # 指定图片为当前目录
+        fp = open('result.png', 'rb')
+        msgImage = MIMEImage(fp.read())
+        fp.close()
+
+        # 定义图片 ID，在 HTML 文本中引用
+        msgImage.add_header('Content-ID', '<image1>')
+        msgRoot.attach(msgImage)
+        
+        server = smtplib.SMTP_SSL("smtp.qq.com", 465)  # 发件人邮箱中的SMTP服务器，端口是25
+        server.login(my_sender, my_pass)  # 括号中对应的是发件人邮箱账号、邮箱密码
+        server.sendmail(my_sender, [my_user, ], msgRoot.as_string())  # 括号中对应的是发件人邮箱账号、收件人邮箱账号、发送邮件
+        server.quit()  # 关闭连接
+    except Exception:  # 如果 try 中的语句没有执行，则会执行下面的 ret=False
+        ret = False
+    return ret
 
 
 def login(driver, username, password, failed=0):
@@ -149,6 +196,21 @@ def submit(driver):
         '(//button/span[contains(text(),"提交")])[3]').click()
     time.sleep(TIMESLP)
 
+    
+def screen_capture(driver):
+    driver.back()
+    driver.back()
+    WebDriverWait(driver, 5).until(
+        EC.visibility_of_element_located((By.CLASS_NAME, 'el-card__body')))
+    driver.find_elements_by_class_name('el-card__body')[1].click()
+    WebDriverWait(driver, 5).until(
+        EC.visibility_of_element_located(
+            (By.XPATH, '//button/span[contains(text(),"加载更多")]')))
+    driver.maximize_window()
+    time.sleep(0.1)
+    driver.save_screenshot('result.png')
+    print('备案历史截图已保存')
+  
 
 def fill_out(driver, campus, reason, destination, track):
     print('开始填报出校备案')
@@ -221,6 +283,16 @@ def run(driver, username, password, campus, reason, destination, track,
     fill_in(driver, campus, reason, habitation, district, street)
 
     print('=================================')
+    
+    screen_capture(driver)
+    print('=================================')
+     
+    ret = mail()
+    if ret:
+        print("邮件发送成功")
+    else:
+        print("邮件发送失败")
+        
     print('可以愉快的玩耍啦！')
 
 
