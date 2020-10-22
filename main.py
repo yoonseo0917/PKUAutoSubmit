@@ -23,7 +23,7 @@ TIMESLP = 3
 
 my_sender = '1692484707@qq.com'  # 发件人邮箱账号
 my_pass = 'fujkixpkjiyhcaji'  # 发件人邮箱密码
-my_user = 'anton1554970211@126.com'  # 收件人邮箱账号
+my_user = '18310451167@163.com'  # 收件人邮箱账号
 
 def mail():
     ret = True
